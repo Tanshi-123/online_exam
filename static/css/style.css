@@ -1,0 +1,109 @@
+/* Modern Root Variables - The "Prosperous" Palette */
+:root {
+    --bg-dark: #0f172a;
+    --card-glass: rgba(30, 41, 59, 0.7);
+    --accent-primary: hsl(255, 20%, 92%); /* Electric Violet */
+    --accent-secondary: #ec4899; /* Pink Glow */
+    --success-glow: #10b981;
+    --text-bright: #f8fafc;
+}
+
+body {
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+    color: var(--text-bright);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+}
+
+/* Glassmorphism Card Logic */
+.card {
+    background: var(--card-glass) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Vibrant Table Design */
+.table {
+    color: var(--text-bright) !important;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table thead th {
+    background: transparent !important;
+    border: none !important;
+    color: var(--accent-primary) !important;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 0.75rem;
+}
+
+.table tbody tr {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+}
+
+.table tbody td {
+    border: none !important;
+    padding: 1.5rem 1rem !important;
+}
+
+/* Buttons that "Pop" */
+.btn-primary {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Inputs / Search Bar */
+.form-control {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-radius: 12px !important;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3) !important;
+    border-color: var(--accent-primary) !important;
+}
+
+/* Custom Navbar Brand */
+.navbar-brand {
+    padding-top: var(--bs-navbar-brand-padding-y);
+    padding-bottom: var(--bs-navbar-brand-padding-y);
+    margin-right: var(--bs-navbar-brand-margin-end);
+    font-size: var(--bs-navbar-brand-font-size);
+    color: #231a7b !important;
+    text-decoration: none;
+    white-space: nowrap;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+    color: #ec4899 !important;
+    text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}

@@ -1,81 +1,122 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Admin Portal | SmartExam</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container d-flex justify-content-between">
-            <span class="navbar-brand">Exam Admin Panel</span>
-            <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    </head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🚀 SmartExam Admin</a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">Welcome, {{ session['username'] }}</span>
+                <a href="/logout" class="btn btn-outline-danger btn-sm rounded-pill">Logout</a>
+            </div>
         </div>
     </nav>
 
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>Active Exams</h2>
-            <a href="/admin/add_exam" class="btn btn-success">+ Create New Exam</a>
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="fw-bold">Exam Management</h1>
+                <p class="text-muted">Generate questions with AI or manage existing tests.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/admin/add_exam" class="btn btn-success shadow-sm px-4">
+                    <i class="bi bi-plus-circle"></i> Create New Exam
+                </a>
+            </div>
         </div>
 
-        <div class="card shadow-sm mb-5">
-            <table class="table table-hover mb-0">
-                <thead class="table-secondary">
-                    <tr><th>Title</th><th>Duration</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {% for exam in exams %}
-                    <tr>
-                        <td>{{ exam.title }}</td>
-                        <td>{{ exam.duration }} mins</td>
-                        <td>
-                            <a href="/admin/generate_questions/{{ exam.id }}" class="btn btn-primary btn-sm">AI Generate</a>
-                            <a href="/admin/add_question/{{ exam.id }}" class="btn btn-info btn-sm text-white">Manual Add</a>
-                            <a href="/admin/delete_exam/{{ exam.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete exam and results?')">Delete</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="card mb-5">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Exam Title</th>
+                            <th>Duration</th>
+                            <th class="text-end pe-4">Control Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in exams %}
+                        <tr class="align-middle">
+                            <td class="ps-4 fw-bold text-primary">{{ exam.title }}</td>
+                            <td><span class="badge bg-light text-dark">{{ exam.duration }} mins</span></td>
+                            <td class="text-end pe-4">
+                                <a href="/admin/generate_questions/{{ exam.id }}" class="btn btn-primary btn-sm me-2">✨ AI Generate</a>
+                                <a href="/admin/add_question/{{ exam.id }}" class="btn btn-info btn-sm text-white me-2">📝 Manual</a>
+                                <a href="/admin/delete_exam/{{ exam.id }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete Exam?')">🗑️</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="row mb-3 align-items-end">
-            <div class="col-md-6"><h3>Student Performance</h3></div>
-            <div class="col-md-6 text-end">
-                <form action="/admin/dashboard" method="GET" class="d-inline-flex gap-2">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-6">
+                <h2 class="fw-bold">Student Analytics</h2>
+            </div>
+            <div class="col-md-6">
+                <form action="/admin/dashboard" method="GET" class="d-flex gap-2">
                     <input type="text" name="search" class="form-control" placeholder="Search student name..." value="{{ search_query }}">
-                    <button type="submit" class="btn btn-dark">Search</button>
+                    <button type="submit" class="btn btn-dark px-4">Search</button>
                     {% if search_query %}<a href="/admin/dashboard" class="btn btn-outline-secondary">Clear</a>{% endif %}
                 </form>
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <table class="table table-striped mb-0">
-                <thead class="table-dark">
-                    <tr><th>Student Name</th><th>Exam Title</th><th>Score</th><th>Date</th></tr>
-                </thead>
-                <tbody>
-                    {% for res in results %}
-                    <tr>
-                        <td><strong>{{ res.username }}</strong></td>
-                        <td>{{ res.title }}</td>
-                        <td>{{ res.score }} / {{ res.total_marks }}</td>
-                        <td>{{ res.exam_date }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="4" class="text-center py-4 text-muted">No student records found.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="card overflow-hidden">
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Student</th>
+                            <th>Exam Name</th>
+                            <th>Score Card</th>
+                            <th class="pe-4 text-end">Date Attempted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for res in results %}
+                        <tr class="align-middle">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center me-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                        {{ res.username[0] | upper }}
+                                    </div>
+                                    <strong>{{ res.username }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ res.title }}</td>
+                            <td>
+                                <div class="progress" style="height: 10px; width: 100px;">
+                                    {% set pct = (res.score / res.total_marks * 100) if res.total_marks > 0 else 0 %}
+                                    <div class="progress-bar bg-success" style="width: {{ pct }}%"></div>
+                                </div>
+                               <td>
+    <div class="d-flex align-items-center">
+        <div class="progress flex-grow-1 me-2" style="height: 8px; background: rgba(255,255,255,0.1);">
+            {% set percentage = (res.score / res.total_marks * 100) if res.total_marks > 0 else 0 %}
+            <div class="progress-bar" style="width: {{ percentage }}%; background: linear-gradient(to right, #8b5cf6, #ec4899);"></div>
+        </div>
+        <span class="small fw-bold">{{ res.score }}/{{ res.total_marks }}</span>
+    </div>
+</td>
+                            </td>
+                            <td class="pe-4 text-end">{{ res.exam_date }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center py-5 text-muted">No student records found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </body>

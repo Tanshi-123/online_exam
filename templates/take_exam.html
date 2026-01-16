@@ -1,63 +1,139 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <title>Exam: {{ exam.title }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #1f2937;
+            padding-bottom: 50px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .timer-box {
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            background: #1f2937;
+            color: #fbbf24;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .question-box {
+            background: #fff;
+            border-left: 5px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+        .question-box:hover {
+            transform: scale(1.01);
+        }
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        .submit-btn {
+            background: var(--primary);
+            border: none;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+        .submit-btn:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5 mb-5">
-        <div class="card shadow-sm p-4">
-            <div class="d-flex justify-content-between border-bottom pb-3 mb-4">
-                <h2 class="text-primary">{{ exam.title }}</h2>
-                <h4 class="text-danger">Time: <span id="timer">{{ exam.duration }}</span>:00</h4>
-            </div>
-
-            <form id="quizForm" action="/submit_exam/{{ exam.id }}" method="POST">
-                {% for q in questions %}
-                <div class="mb-4 p-3 border rounded bg-white">
-                    <h5>{{ loop.index }}. {{ q.question_text }}</h5>
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="A" required>
-                        <label class="form-check-label">{{ q.option_a }}</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="B">
-                        <label class="form-check-label">{{ q.option_b }}</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="C">
-                        <label class="form-check-label">{{ q.option_c }}</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="D">
-                        <label class="form-check-label">{{ q.option_d }}</label>
-                    </div>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                
+                <div class="timer-box mb-4 d-flex justify-content-between align-items-center">
+                    <span>📖 {{ exam.title }}</span>
+                    <span>⏳ Time Remaining: <span id="timer">{{ exam.duration }}:00</span></span>
                 </div>
-                {% else %}
-                <div class="alert alert-warning">No questions found for this exam. Admin needs to generate them.</div>
-                {% endfor %}
 
-                {% if questions %}
-                <button type="submit" class="btn btn-success btn-lg w-100 mt-3">Submit Exam</button>
-                {% else %}
-                <a href="/student/dashboard" class="btn btn-secondary w-100">Go Back</a>
-                {% endif %}
-            </form>
+                <div class="glass-card p-4 p-md-5">
+                    <form id="examForm" action="/submit_exam/{{ exam.id }}" method="POST">
+                        
+                        {% for q in questions %}
+                        <div class="question-box p-4 mb-4 rounded shadow-sm">
+                            <h5 class="fw-bold mb-3">{{ loop.index }}. {{ q.question_text }}</h5>
+                            
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="{{ q.id }}" id="q{{ q.id }}a" value="A" required>
+                                <label class="form-check-label" for="q{{ q.id }}a">{{ q.option_a }}</label>
+                            </div>
+                            
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="{{ q.id }}" id="q{{ q.id }}b" value="B">
+                                <label class="form-check-label" for="q{{ q.id }}b">{{ q.option_b }}</label>
+                            </div>
+                            
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="{{ q.id }}" id="q{{ q.id }}c" value="C">
+                                <label class="form-check-label" for="q{{ q.id }}c">{{ q.option_c }}</label>
+                            </div>
+                            
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="{{ q.id }}" id="q{{ q.id }}d" value="D">
+                                <label class="form-check-label" for="q{{ q.id }}d">{{ q.option_d }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-primary submit-btn w-100 mt-4 text-white shadow">
+                            Finalize and Submit Exam
+                        </button>
+                    </form>
+                </div>
+
+            </div>
         </div>
     </div>
 
     <script>
-        // Simple Countdown Timer
-        let time = {{ exam.duration }} * 60;
-        let display = document.querySelector('#timer');
-        setInterval(() => {
-            if (time <= 0) {
-                document.getElementById('quizForm').submit();
-            } else {
-                time--;
-                let mins = Math.floor(time / 60);
-                let secs = time % 60;
-                display.innerHTML = mins + ":" + (secs < 10 ? "0" : "") + secs;
+        let duration = {{ exam.duration }} * 60;
+        let timerDisplay = document.querySelector('#timer');
+
+        let countdown = setInterval(function () {
+            let minutes = Math.floor(duration / 60);
+            let seconds = duration % 60;
+
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            timerDisplay.textContent = minutes + ":" + seconds;
+
+            if (--duration < 0) {
+                clearInterval(countdown);
+                alert("Time is up! Your exam will be submitted automatically.");
+                document.getElementById('examForm').submit();
+            }
+            
+            // Change color to red in last 1 minute
+            if (duration < 60) {
+                document.querySelector('.timer-box').style.color = "#ef4444";
             }
         }, 1000);
     </script>

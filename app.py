@@ -2,6 +2,22 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 from google import genai
+import time
+
+AI_COOLDOWN_SECONDS = 60
+last_ai_call_time = {}
+
+def can_call_ai(exam_id):
+    now = time.time()
+    last = last_ai_call_time.get(exam_id, 0)
+
+    if now - last < AI_COOLDOWN_SECONDS:
+        return False
+
+    last_ai_call_time[exam_id] = now
+    return True
+
+
 
 
 app = Flask(__name__)
@@ -110,23 +126,54 @@ def add_question_manual(exam_id):
 
 @app.route('/admin/generate_questions/<int:exam_id>')
 def generate_ai_questions(exam_id):
-    if session.get('role') != 'admin': return redirect(url_for('login'))
+
+    if session.get('role') != 'admin':
+        return redirect(url_for('login'))
+
+    # ✅ Server-side rate limiting
+    if not can_call_ai(exam_id):
+        flash('AI limit reached. Please wait 60 seconds or use "Manual Add".', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('SELECT title FROM exams WHERE id = %s', (exam_id,))
     exam = cursor.fetchone()
+
+    if not exam:
+        flash('Exam not found.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
     try:
-        prompt = f"Generate 5 MCQ for '{exam['title']}'. Format: Question|A|B|C|D|CorrectLetter."
-        response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
+        prompt = (
+            f"Generate exactly 5 MCQs for '{exam['title']}'. "
+            f"Strict format: Question|A|B|C|D|CorrectLetter"
+        )
+
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+
         for line in response.text.strip().split('\n'):
             p = line.split('|')
             if len(p) == 6:
-                cursor.execute('INSERT INTO questions (exam_id, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES (%s, %s, %s, %s, %s, %s, %s)', 
-                               (exam_id, p[0], p[1], p[2], p[3], p[4], p[5].strip().upper()))
+                cursor.execute(
+                    '''
+                    INSERT INTO questions
+                    (exam_id, question_text, option_a, option_b, option_c, option_d, correct_option)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ''',
+                    (exam_id, p[0], p[1], p[2], p[3], p[4], p[5].strip().upper())
+                )
+
         mysql.connection.commit()
-        flash('AI Questions Generated!', 'success')
-    except Exception:
-        flash('AI Limit Reached. Use "Add Manual" or wait 60s.', 'danger')
+        flash('AI Questions Generated Successfully!', 'success')
+
+    except Exception as e:
+        flash('AI generation failed. Please try again later.', 'danger')
+
     return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/admin/delete_exam/<int:exam_id>')
 def delete_exam(exam_id):
