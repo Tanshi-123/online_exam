@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exam: {{ exam.title }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container mt-5 mb-5">
+        <div class="card shadow-sm p-4">
+            <div class="d-flex justify-content-between border-bottom pb-3 mb-4">
+                <h2 class="text-primary">{{ exam.title }}</h2>
+                <h4 class="text-danger">Time: <span id="timer">{{ exam.duration }}</span>:00</h4>
+            </div>
+
+            <form id="quizForm" action="/submit_exam/{{ exam.id }}" method="POST">
+                {% for q in questions %}
+                <div class="mb-4 p-3 border rounded bg-white">
+                    <h5>{{ loop.index }}. {{ q.question_text }}</h5>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="A" required>
+                        <label class="form-check-label">{{ q.option_a }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="B">
+                        <label class="form-check-label">{{ q.option_b }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="C">
+                        <label class="form-check-label">{{ q.option_c }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="{{ q.id }}" value="D">
+                        <label class="form-check-label">{{ q.option_d }}</label>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">No questions found for this exam. Admin needs to generate them.</div>
+                {% endfor %}
+
+                {% if questions %}
+                <button type="submit" class="btn btn-success btn-lg w-100 mt-3">Submit Exam</button>
+                {% else %}
+                <a href="/student/dashboard" class="btn btn-secondary w-100">Go Back</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Simple Countdown Timer
+        let time = {{ exam.duration }} * 60;
+        let display = document.querySelector('#timer');
+        setInterval(() => {
+            if (time <= 0) {
+                document.getElementById('quizForm').submit();
+            } else {
+                time--;
+                let mins = Math.floor(time / 60);
+                let secs = time % 60;
+                display.innerHTML = mins + ":" + (secs < 10 ? "0" : "") + secs;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
