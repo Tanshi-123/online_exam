@@ -7,17 +7,17 @@
 <body class="bg-light d-flex align-items-center" style="height: 100vh;">
     <div class="container col-md-4 card shadow p-4">
         <h3 class="text-center mb-4">Create Account</h3>
-        <form method="POST">
-            <div class="mb-3">
-                <label>Choose Username</label>
-                <input type="text" name="username" class="form-control" required>
-            </div>
-            <div class="mb-4">
-                <label>Choose Password</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-success w-100 mb-3">Register</button>
-        </form>
+        <form action="/register" method="POST" autocomplete="off">
+    <div class="mb-3">
+        <label>New Username</label>
+        <input type="text" name="username" class="form-control" autocomplete="off" placeholder="Choose Username" required>
+    </div>
+    <div class="mb-3">
+        <label>New Password</label>
+        <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Choose Password" required>
+    </div>
+    <button type="submit" class="btn btn-success w-100">Create Account</button>
+</form>
         <div class="text-center">
             <p>Already have an account? <a href="/login">Login here</a></p>
         </div>

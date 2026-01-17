@@ -2,37 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 from google import genai
-import time
-
-AI_COOLDOWN_SECONDS = 60
-last_ai_call_time = {}
-
-def can_call_ai(exam_id):
-    now = time.time()
-    last = last_ai_call_time.get(exam_id, 0)
-
-    if now - last < AI_COOLDOWN_SECONDS:
-        return False
-
-    last_ai_call_time[exam_id] = now
-    return True
-
-
-
 
 app = Flask(__name__)
-app.secret_key = 'sepm_final_2026_pro'
-
-
-def can_call_ai(exam_id):
-    current_time = time.time()
-    last_time = last_ai_call_time.get(exam_id, 0)
-
-    if current_time - last_time < AI_COOLDOWN_SECONDS:
-        return False
-
-    last_ai_call_time[exam_id] = current_time
-    return True
+app.secret_key = 'smart_exam_2026_final'
 
 # --- Database Config ---
 app.config['MYSQL_HOST'] = 'localhost'
@@ -41,10 +13,10 @@ app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'online_exam'
 mysql = MySQL(app)
 
-# --- Gemini Config (Using 1.5 Flash for better stability) ---
+# --- Gemini AI Config ---
 client = genai.Client(api_key="AIzaSyApw71xyMw6QKIvRJomMk0rET8f5wJqCCs")
 
-# --- AUTHENTICATION ---
+# --- AUTH ROUTES (Fixed for Blank Fields) ---
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -60,7 +32,7 @@ def login():
         if user:
             session.update({'loggedin': True, 'id': user['id'], 'username': user['username'], 'role': user['role']})
             return redirect(url_for('admin_dashboard' if user['role'] == 'admin' else 'student_dashboard'))
-        flash('Invalid Username or Password!', 'danger')
+        flash('Invalid Credentials!', 'danger')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -68,24 +40,19 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
-        if cursor.fetchone():
-            flash('Username already exists!', 'warning')
-        else:
-            cursor.execute('INSERT INTO users (username, password, role) VALUES (%s, %s, "student")', (username, password))
-            mysql.connection.commit()
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('login')) # Fix: No more stalling
+        cursor = mysql.connection.cursor()
+        cursor.execute('INSERT INTO users (username, password, role) VALUES (%s, %s, "student")', (username, password))
+        mysql.connection.commit()
+        flash('Account created! Please login.', 'success')
+        return redirect(url_for('login'))
     return render_template('register.html')
 
-# --- ADMIN DASHBOARD & SEARCH ---
+# --- ADMIN ROUTES (Fixed for IntegrityError) ---
 @app.route('/admin/dashboard')
 def admin_dashboard():
     if session.get('role') != 'admin': return redirect(url_for('login'))
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     search = request.args.get('search', '')
-    
     cursor.execute('SELECT * FROM exams')
     exams = cursor.fetchall()
     
@@ -98,16 +65,30 @@ def admin_dashboard():
         cursor.execute(query + " ORDER BY results.exam_date DESC")
     return render_template('admin_dash.html', exams=exams, results=cursor.fetchall(), search_query=search)
 
-# --- EXAM MANAGEMENT (AI & MANUAL) ---
 @app.route('/admin/add_exam', methods=['GET', 'POST'])
 def add_exam():
-    if session.get('role') == 'admin' and request.method == 'POST':
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+    if request.method == 'POST':
+        title = request.form['title']
+        duration = request.form['duration']
         cursor = mysql.connection.cursor()
-        cursor.execute('INSERT INTO exams (title, duration) VALUES (%s, %s)', (request.form['title'], request.form['duration']))
+        cursor.execute('INSERT INTO exams (title, duration) VALUES (%s, %s)', (title, duration))
         mysql.connection.commit()
-        flash('Exam created!', 'success')
+        flash('Exam created successfully!', 'success')
         return redirect(url_for('admin_dashboard'))
     return render_template('add_exam.html')
+
+@app.route('/admin/delete_exam/<int:exam_id>')
+def delete_exam(exam_id):
+    if session.get('role') == 'admin':
+        cursor = mysql.connection.cursor()
+        # FIX: Delete child records first to satisfy Foreign Key constraints
+        cursor.execute('DELETE FROM results WHERE exam_id = %s', (exam_id,))
+        cursor.execute('DELETE FROM questions WHERE exam_id = %s', (exam_id,))
+        cursor.execute('DELETE FROM exams WHERE id = %s', (exam_id,))
+        mysql.connection.commit()
+        flash('Exam and history deleted successfully.', 'info')
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/add_question/<int:exam_id>', methods=['GET', 'POST'])
 def add_question_manual(exam_id):
@@ -126,65 +107,22 @@ def add_question_manual(exam_id):
 
 @app.route('/admin/generate_questions/<int:exam_id>')
 def generate_ai_questions(exam_id):
-
-    if session.get('role') != 'admin':
-        return redirect(url_for('login'))
-
-    # ✅ Server-side rate limiting
-    if not can_call_ai(exam_id):
-        flash('AI limit reached. Please wait 60 seconds or use "Manual Add".', 'danger')
-        return redirect(url_for('admin_dashboard'))
-
+    if session.get('role') != 'admin': return redirect(url_for('login'))
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('SELECT title FROM exams WHERE id = %s', (exam_id,))
     exam = cursor.fetchone()
-
-    if not exam:
-        flash('Exam not found.', 'danger')
-        return redirect(url_for('admin_dashboard'))
-
     try:
-        prompt = (
-            f"Generate exactly 5 MCQs for '{exam['title']}'. "
-            f"Strict format: Question|A|B|C|D|CorrectLetter"
-        )
-
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt
-        )
-
+        prompt = f"Generate 5 MCQ for '{exam['title']}'. Format: Question|A|B|C|D|CorrectLetter."
+        response = client.models.generate_content(model="gemini-1.5-flash", contents=prompt)
         for line in response.text.strip().split('\n'):
             p = line.split('|')
             if len(p) == 6:
-                cursor.execute(
-                    '''
-                    INSERT INTO questions
-                    (exam_id, question_text, option_a, option_b, option_c, option_d, correct_option)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    ''',
-                    (exam_id, p[0], p[1], p[2], p[3], p[4], p[5].strip().upper())
-                )
-
+                cursor.execute('INSERT INTO questions (exam_id, question_text, option_a, option_b, option_c, option_d, correct_option) VALUES (%s, %s, %s, %s, %s, %s, %s)', 
+                               (exam_id, p[0], p[1], p[2], p[3], p[4], p[5].strip().upper()))
         mysql.connection.commit()
-        flash('AI Questions Generated Successfully!', 'success')
-
-    except Exception as e:
-        flash('AI generation failed. Please try again later.', 'danger')
-
-    return redirect(url_for('admin_dashboard'))
-
-
-@app.route('/admin/delete_exam/<int:exam_id>')
-def delete_exam(exam_id):
-    if session.get('role') == 'admin':
-        cursor = mysql.connection.cursor()
-        # Fix: Delete child records first to avoid IntegrityError
-        cursor.execute('DELETE FROM results WHERE exam_id = %s', (exam_id,))
-        cursor.execute('DELETE FROM questions WHERE exam_id = %s', (exam_id,))
-        cursor.execute('DELETE FROM exams WHERE id = %s', (exam_id,))
-        mysql.connection.commit()
-        flash('Exam and related data deleted!', 'info')
+        flash('AI Questions Generated!', 'success')
+    except Exception:
+        flash('AI Limit Reached. Use "Manual Add" or wait 60s.', 'danger')
     return redirect(url_for('admin_dashboard'))
 
 # --- STUDENT ROUTES ---
@@ -199,14 +137,13 @@ def student_dashboard():
 @app.route('/take_exam/<int:exam_id>')
 def take_exam(exam_id):
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT * FROM exams WHERE id = %s', (exam_id,))
-    exam = cursor.fetchone()
     cursor.execute('SELECT * FROM questions WHERE exam_id = %s', (exam_id,))
     questions = cursor.fetchall()
     if not questions:
-        flash('No questions available yet!', 'warning')
+        flash('Exam not ready yet!', 'warning')
         return redirect(url_for('student_dashboard'))
-    return render_template('take_exam.html', exam=exam, questions=questions)
+    cursor.execute('SELECT * FROM exams WHERE id = %s', (exam_id,))
+    return render_template('take_exam.html', exam=cursor.fetchone(), questions=questions)
 
 @app.route('/submit_exam/<int:exam_id>', methods=['POST'])
 def submit_exam(exam_id):
