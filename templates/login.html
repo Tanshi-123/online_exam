@@ -1,37 +1,131 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome | SmartExam AI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="bg-light">
-    <div class="container mt-5 col-md-4">
-        <div class="card shadow p-4">
-            <h3 class="text-center">Login</h3>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                {% for category, message in messages %}
-                  <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            /* Cute Pastel Gradient */
+            background: linear-gradient(135deg, #fdfcfb 0%, #e2d1f9 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Quicksand', sans-serif;
+            margin: 0;
+        }
 
-            <form action="/login" method="POST" autocomplete="off">
-    <div class="mb-3">
-        <label>Username</label>
-        <input type="text" name="username" class="form-control" autocomplete="off" placeholder="Username" required>
-    </div>
-    <div class="mb-3">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" autocomplete="new-password" placeholder="Password" required>
-    </div>
-    <button type="submit" class="btn btn-primary w-100">Login</button>
-</form>
-            <div class="mt-3 text-center">
-                <p>New student? <a href="/register">Register here</a></p>
+        .login-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(180, 160, 220, 0.2);
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #ffffff;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            color: #7c5cb7;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .login-card p {
+            color: #9a8cbb;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .form-control {
+            border-radius: 15px;
+            padding: 12px 20px;
+            border: 1px solid #e0d7f7;
+            background: rgba(255, 255, 255, 0.9);
+            color: #5d4d7a;
+            /* Ensures clear space */
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+            border-color: #b194f3;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 12px;
+            color: white;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(167, 139, 250, 0.4);
+        }
+
+        .register-link {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #8b7cb3;
+        }
+
+        .register-link a {
+            color: #a78bfa;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Cute decorative circles */
+        .circle {
+            position: absolute;
+            z-index: -1;
+            border-radius: 50%;
+            filter: blur(50px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="circle" style="width: 300px; height: 300px; background: #d1fae5; top: 10%; left: 10%;"></div>
+    <div class="circle" style="width: 400px; height: 400px; background: #ffedd5; bottom: 5%; right: 5%;"></div>
+
+    <div class="login-card">
+        <h2>Welcome Back!</h2>
+        <p>Please enter your details to start your exam.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} rounded-pill py-1 small">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST" autocomplete="off">
+            <div class="mb-3">
+                <input type="text" name="username" class="form-control" placeholder="Username" autocomplete="off" required>
             </div>
+            <div class="mb-3">
+                <input type="password" name="password" class="form-control" placeholder="Password" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn-login">Sign In ✨</button>
+        </form>
+
+        <div class="register-link">
+            New here? <a href="/register">Create a cute account</a>
         </div>
     </div>
+
 </body>
 </html>

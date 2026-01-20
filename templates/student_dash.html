@@ -1,75 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard</title>
+    <title>Student Portal | SmartExam AI</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: hsl(320, 16%, 93%); }
-        .exam-card {
-            border: none;
-            border-radius: 15px;
-            transition: transform 0.3s shadow 0.3s;
+        :root {
+            --bg-midnight: #0f172a;
+            --accent-violet: #8b5cf6;
+            --glass: rgba(255, 255, 255, 0.05);
+            --text-bright: #f8fafc;
         }
-        .exam-card:hover {
-            transform: translateY(-5px);
-            shadow: 0 10px 20px rgba(0,0,0,0.1);
+        body {
+            background-color: var(--bg-midnight);
+            background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+            color: var(--text-bright);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
         }
-        .welcome-section {
-            background: linear-gradient(135deg, #08295a 0%, #1962d0 100%);
-            color: white;
-            padding: 40px 0;
-            border-radius: 0 0 30px 30px;
-            margin-bottom: 30px;
+        /* Sidebar Styling */
+        #sidebar {
+            width: 260px;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(139, 92, 246, 0.3);
+            position: fixed;
+            padding: 30px 20px;
+            z-index: 100;
         }
+        .sidebar-link {
+            display: block;
+            padding: 12px 15px;
+            color: #cbd5e1;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-violet);
+            padding-left: 20px;
+        }
+        #main-content {
+            margin-left: 260px;
+            padding: 40px;
+            width: calc(100% - 260px);
+        }
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: transform 0.3s ease;
+        }
+        .card:hover { transform: translateY(-5px); }
+
+        /* Chatbot UI */
+        #chat-bubble {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 60px; height: 60px; background: var(--accent-violet);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 24px; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+            z-index: 1000;
+        }
+        #chat-window {
+            display: none; position: fixed; bottom: 100px; right: 30px;
+            width: 320px; height: 420px; background: white;
+            border-radius: 20px; color: #333; flex-direction: column;
+            overflow: hidden; z-index: 1000; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        .bot-msg { background: #e2e8f0; padding: 8px 12px; border-radius: 12px; margin-bottom: 10px; max-width: 85%; }
+        .user-msg { background: var(--accent-violet); color: white; padding: 8px 12px; border-radius: 12px; margin-bottom: 10px; align-self: flex-end; max-width: 85%; }
     </style>
 </head>
 <body>
-
-    <div class="welcome-section shadow">
-        <div class="container d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="display-5 fw-bold">Welcome, {{ session['username'] }}!</h1>
-                <p class="lead mb-0">Ready to test your knowledge today?</p>
-            </div>
-            <a href="/logout" class="btn btn-outline-light">Logout</a>
-        </div>
+    <div id="sidebar">
+        <h3 class="fw-bold text-white mb-5" style="letter-spacing: 1px;">🚀 SMARTEXAM</h3>
+        <a href="/student/dashboard" class="sidebar-link active">🏠 Dashboard</a>
+        <a href="#active-exams" class="sidebar-link">✍️ Exams</a>
+        <a href="/student/results" class="sidebar-link">📊 My Results</a>
+        <hr style="border-color: rgba(255,255,255,0.1)">
+        <a href="/logout" class="sidebar-link text-danger">🚪 Logout</a>
     </div>
 
-    <div class="container">
-        <h3 class="mb-4">Available Exams</h3>
-        
-        <div class="row">
+    <div id="main-content">
+        <header class="mb-5">
+            <h1 class="fw-bold">Hi, {{ session['username'] }}! 👋</h1>
+            <p class="text-muted">You have <b>{{ exams|length }}</b> active exams waiting for you.</p>
+        </header>
+
+        <div class="row" id="active-exams">
             {% for exam in exams %}
-            <div class="col-md-4 mb-4">
-                <div class="card exam-card shadow-sm h-100">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title fw-bold text-primary">{{ exam.title }}</h5>
-                            <span class="badge bg-info text-dark">{{ exam.duration }} Mins</span>
-                        </div>
-                        <p class="card-text text-white">This exam contains questions generated by AI to test your skills in {{ exam.title }}.</p>
-                        <div class="mt-auto">
-                            <hr>
-                            <a href="/take_exam/{{ exam.id }}" class="btn btn-primary w-100 py-2 fw-bold">Start Exam</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="col-12 text-center mt-5">
-                <div class="alert alert-warning py-4 shadow-sm">
-                    <h4>No Exams Available!</h4>
-                    <p class="mb-0">The administrator hasn't posted any exams yet. Please check back later.</p>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold mb-2 text-white">{{ exam.title }}</h5>
+                    <p class="text-secondary small mb-4">⏱️ Duration: {{ exam.duration }} mins</p>
+                    <a href="/take_exam/{{ exam.id }}" class="btn btn-primary w-100 rounded-pill py-2">Start Assessment</a>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="chat-bubble" onclick="toggleChat()">🤖</div>
+
+    <div id="chat-window">
+        <div class="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Exam Support Assistant</span>
+            <span style="cursor:pointer" onclick="toggleChat()">✕</span>
+        </div>
+        <div id="chat-body" class="p-3 flex-grow-1 overflow-auto d-flex flex-column" style="background: #f1f5f9;">
+            <div class="bot-msg shadow-sm">Hello! I am your AI assistant. How can I help you with your exam today?</div>
+        </div>
+        <div class="p-2 border-top bg-white">
+            <div class="input-group">
+                <input type="text" id="chat-input" class="form-control" placeholder="Ask a doubt..." autocomplete="off">
+                <button class="btn btn-primary" onclick="botReply()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            let win = document.getElementById('chat-window');
+            win.style.display = (win.style.display === 'none' || win.style.display === '') ? 'flex' : 'none';
+        }
+
+        function botReply() {
+            let input = document.getElementById('chat-input');
+            let body = document.getElementById('chat-body');
+            let userText = input.value.trim().toLowerCase();
+            
+            if(!userText) return;
+            
+            // User Message
+            body.innerHTML += `<div class="user-msg shadow-sm">${input.value}</div>`;
+            
+            let reply = "";
+
+            // LOGIC FOR ANSWERS
+            if (userText.includes("start") || userText.includes("wait") || userText.includes("not opening")) {
+                reply = "🕒 If the exam link is not opening, please wait for the Admin to activate it. Try refreshing this page.";
+            }
+            else if (userText.includes("crash") || userText.includes("error") || userText.includes("stuck") || userText.includes("closed")) {
+                reply = "⚠️ <b>EMERGENCY:</b> If your exam crashed, immediately contact the Admin: <br>📞 Call: +91 98765 43210 <br>📧 Email: support@smartexam.com";
+            }
+            else if (userText.includes("time") || userText.includes("score") || userText.includes("result")) {
+                reply = "You can view your exam duration on the exam cards. Results are available in the 'My Results' sidebar tab.";
+            }
+            else if (userText.includes("hi") || userText.includes("hello") || userText.includes("who are you")) {
+                reply = "Hello! I am your SmartExam Bot. I help with exam-related issues like crashes, starting problems, and score locations.";
+            }
+            else {
+                // Irrelevant Question
+                reply = "🚫 <b>Not Defined Question:</b> I am only trained to answer exam-related troubleshooting questions. Please ask about exam errors or technical support.";
+            }
+
+            // Bot response with delay
+            setTimeout(() => {
+                body.innerHTML += `<div class="bot-msg shadow-sm">${reply}</div>`;
+                body.scrollTop = body.scrollHeight;
+            }, 600);
+
+            input.value = "";
+        }
+
+        // Allow 'Enter' key to send
+        document.getElementById('chat-input').addEventListener("keypress", function(e) {
+            if (e.key === "Enter") botReply();
+        });
+    </script>
 </body>
 </html>

@@ -147,15 +147,38 @@ def take_exam(exam_id):
 
 @app.route('/submit_exam/<int:exam_id>', methods=['POST'])
 def submit_exam(exam_id):
+    if not session.get('loggedin'): return redirect(url_for('login'))
+    
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT id, correct_option FROM questions WHERE exam_id = %s', (exam_id,))
+    cursor.execute('SELECT * FROM questions WHERE exam_id = %s', (exam_id,))
     questions = cursor.fetchall()
-    score = sum(1 for q in questions if request.form.get(str(q['id'])) == q['correct_option'])
-    cursor.execute('INSERT INTO results (user_id, exam_id, score, total_marks) VALUES (%s, %s, %s, %s)', 
-                   (session['id'], exam_id, score, len(questions)))
-    mysql.connection.commit()
-    return redirect(url_for('student_results'))
+    
+    review_data = []
+    score = 0
+    total = len(questions)
 
+    for q in questions:
+        user_ans = request.form.get(str(q['id']))
+        is_correct = (user_ans == q['correct_option'])
+        if is_correct:
+            score += 1
+        
+        # Store detailed info for the review page
+        review_data.append({
+            'question': q['question_text'],
+            'options': {'A': q['option_a'], 'B': q['option_b'], 'C': q['option_c'], 'D': q['option_d']},
+            'user_ans': user_ans,
+            'correct_ans': q['correct_option'],
+            'is_correct': is_correct
+        })
+
+    # Save final score to database
+    cursor.execute('INSERT INTO results (user_id, exam_id, score, total_marks) VALUES (%s, %s, %s, %s)', 
+                   (session['id'], exam_id, score, total))
+    mysql.connection.commit()
+
+    # Show the review page instead of redirecting to dashboard
+    return render_template('review_results.html', score=score, total=total, review=review_data)
 @app.route('/student/results')
 def student_results():
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)

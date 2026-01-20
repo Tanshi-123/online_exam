@@ -2,7 +2,7 @@
 :root {
     --bg-dark: #0f172a;
     --card-glass: rgba(30, 41, 59, 0.7);
-    --accent-primary: hsl(255, 20%, 92%); /* Electric Violet */
+    --accent-primary: hsl(137, 63%, 53%); /* Electric Violet */
     --accent-secondary: #ec4899; /* Pink Glow */
     --success-glow: #10b981;
     --text-bright: #f8fafc;
