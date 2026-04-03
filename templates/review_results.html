@@ -1,47 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Exam Review | SmartExam</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; padding: 40px; }
-        * { color: white; }
-        h1, h2, h3, h4, h5, h6, p, span, a, strong { color: white !important; }
-        .review-card { background: rgba(255,255,255,0.05); border-radius: 15px; border: 1px solid rgba(245, 235, 235, 0.1); margin-bottom: 20px; }
-        .correct { border-left: 5px solid #10b981; background: rgba(16, 185, 129, 0.1); }
-        .wrong { border-left: 5px solid #ef4444; background: rgba(239, 68, 68, 0.1); }
-        .badge-correct { background: #10b981; color: white; }
-        .badge-wrong { background: #ef4444; color: white; }
+        :root { --success: #10b981; --danger: #ef4444; --bg: #f8fafc; }
+        body { background: var(--bg); font-family: 'Inter', sans-serif; padding: 40px 0; }
+        .result-header { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 15px rgba(0,0,0,0.05); margin-bottom: 30px; text-align: center; }
+        .score-circle { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem; font-weight: 800; border: 5px solid var(--success); color: var(--success); }
+        .review-card { background: white; border-radius: 15px; border-left: 8px solid #cbd5e1; margin-bottom: 20px; transition: 0.3s; }
+        .review-card.correct { border-left-color: var(--success); }
+        .review-card.incorrect { border-left-color: var(--danger); }
+        .option-box { padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 5px; font-size: 0.95rem; }
+        .opt-correct { background: #dcfce7; border-color: var(--success); color: #065f46; font-weight: 600; }
+        .opt-wrong { background: #fee2e2; border-color: var(--danger); color: #991b1b; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="text-center mb-5">
-            <h1 class="fw-bold">Exam Results</h1>
-            <h2 class="display-4 {% if score/total >= 0.5 %}text-success{% else %}text-danger{% endif %}">
-                {{ score }} / {{ total }}
-            </h2>
-            <a href="/student/dashboard" class="btn btn-primary rounded-pill mt-3">Back to Dashboard</a>
-        </div>
-
-        <h3 class="mb-4">Review Your Answers</h3>
-        {% for item in review %}
-        <div class="card review-card p-4 {% if item.is_correct %}correct{% else %}wrong{% endif %}">
-            <h5 class="fw-bold mb-3">{{ loop.index }}. {{ item.question }}</h5>
-            
-            <div class="row">
-                {% for key, val in item.options.items() %}
-                <div class="col-md-6 mb-2">
-                    <div class="p-2 rounded border {% if key == item.correct_ans %}border-success bg-dark{% elif key == item.user_ans and not item.is_correct %}border-danger bg-dark{% else %}border-secondary{% endif %}">
-                        <strong>{{ key }}:</strong> {{ val }}
-                        {% if key == item.correct_ans %} <span class="badge badge-correct ms-2">Correct Answer</span> {% endif %}
-                        {% if key == item.user_ans and not item.is_correct %} <span class="badge badge-wrong ms-2">Your Choice</span> {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
+        <div class="col-lg-8 mx-auto">
+            <div class="result-header">
+                <div class="score-circle">{{ score }} / {{ total }}</div>
+                <h2 class="fw-bold">Exam Completed!</h2>
+                <p class="text-muted">Review your answers below to improve your performance.</p>
+                <a href="/student/dashboard" class="btn btn-primary rounded-pill px-4">Back to Dashboard</a>
             </div>
+
+            <h4 class="mb-4 fw-bold">Detailed Review</h4>
+
+            {% for item in review %}
+            <div class="review-card p-4 shadow-sm {% if item.is_correct %}correct{% else %}incorrect{% endif %}">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="fw-bold m-0">{{ loop.index }}. {{ item.question }}</h5>
+                    {% if item.is_correct %}
+                        <span class="badge bg-success">Correct</span>
+                    {% else %}
+                        <span class="badge bg-danger">Incorrect</span>
+                    {% endif %}
+                </div>
+
+                <div class="row g-2">
+                    {% for key, val in item.options.items() %}
+                    <div class="col-md-6">
+                        <div class="option-box 
+                            {% if key == item.correct_ans %}opt-correct{% endif %}
+                            {% if key == item.user_ans and not item.is_correct %}opt-wrong{% endif %}">
+                            <strong>{{ key }}:</strong> {{ val }}
+                            {% if key == item.user_ans %} <small class="float-end">(Your Pick)</small>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 </body>
 </html>

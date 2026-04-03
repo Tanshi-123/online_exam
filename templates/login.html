@@ -116,8 +116,11 @@
             <div class="mb-3">
                 <input type="text" name="username" class="form-control" placeholder="Username" autocomplete="off" required>
             </div>
-            <div class="mb-3">
-                <input type="password" name="password" class="form-control" placeholder="Password" autocomplete="new-password" required>
+            <div class="mb-3 position-relative">
+                <input type="password" id="passwordField" name="password" class="form-control" placeholder="Password" autocomplete="new-password" required style="padding-right: 40px;">
+                <span class="position-absolute" id="togglePassword" style="right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #a78bfa;">
+                    👁️
+                </span>
             </div>
             <button type="submit" class="btn-login">Sign In ✨</button>
         </form>
@@ -127,5 +130,16 @@
         </div>
     </div>
 
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#passwordField');
+
+        togglePassword.addEventListener('click', function (e) {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            // Toggle emoji based on state
+            this.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+    </script>
 </body>
 </html>
