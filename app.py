@@ -39,13 +39,14 @@ mysql = MySQL(app)
 # We use a 100% free open-source endpoint (pollinations.ai) to bypass Google/OpenAI restrictions.
 
 # --- Ensure num_questions column exists ---
+# --- Ensure num_questions column exists ---
 with app.app_context():
     try:
         cursor = mysql.connection.cursor()
         cursor.execute("ALTER TABLE exams ADD COLUMN num_questions INT DEFAULT 10")
         mysql.connection.commit()
-    except:
-        pass  # Column already exists
+    except Exception as e:
+        print("\n!!! DETAILED LOCAL DATABASE ERROR !!!:", e, "\n")  # Column already exists
 
 
 
